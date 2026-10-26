@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+  /* Visible keyboard focus everywhere; inverted on dark surfaces. */
+  :focus-visible {
+    outline: 3px solid #2f4fcf;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .on-dark :focus-visible {
+    outline-color: #ffe45c;
+  }
+  main:focus {
+    outline: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Graph-paper backdrop used on the landing hero. */
+  .bg-grid {
+    background-color: #f4f6fa;
+    background-image:
+      linear-gradient(to right, rgba(20, 33, 61, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 33, 61, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  /* The highlighter: a yellow stroke under text that matters. */
+  .mark-hilite {
+    background: linear-gradient(transparent 52%, #ffe45c 52%, #ffe45c 92%, transparent 92%);
+    padding: 0 0.15em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+}
