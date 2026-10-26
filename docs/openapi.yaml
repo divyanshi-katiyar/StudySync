@@ -1,0 +1,1908 @@
+openapi: 3.0.3
+info:
+  title: StudySync API
+  version: 1.0.0
+  description: REST API for the StudySync collaborative study-group platform (Week 3).
+servers:
+- url: http://localhost:5000
+paths:
+  /api/health:
+    get:
+      tags:
+      - System
+      summary: Liveness check (also touches the database).
+      description: 'Access: Public. Returns `{ status, time }`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Create an account and sign in. Sets the refresh cookie.
+      description: 'Access: Public. Returns `{ user, accessToken, expiresIn }`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 2 to 60 characters
+                email:
+                  type: string
+                  description: Valid email; stored lower-case; must be unique
+                password:
+                  type: string
+                  description: 8 to 128 characters with a letter and a number
+              required:
+              - name
+              - email
+              - password
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '409':
+          description: Conflict (duplicate email, already a member, owner cannot leave)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded; see the Retry-After header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Verify credentials and sign in. Wrong email and wrong password give the same 401.
+      description: 'Access: Public. Returns `{ user, accessToken, expiresIn }`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Account email
+                password:
+                  type: string
+                  description: Account password
+              required:
+              - email
+              - password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded; see the Retry-After header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Exchange the httpOnly refresh cookie for a new access token. The refresh token rotates on every use.
+      description: 'Access: Refresh cookie. Returns `{ user, accessToken, expiresIn }`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded; see the Retry-After header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Revoke the refresh token and clear the cookie. Public on purpose so an expired session can still sign out.
+      description: 'Access: Public. Returns `{ ok }`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/users/me:
+    get:
+      tags:
+      - Users
+      summary: The current user's profile.
+      description: 'Access: Signed in. Returns `user`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Users
+      summary: Update name and/or avatar link. Email and role cannot be changed here.
+      description: 'Access: Signed in. Returns `user`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 2 to 60 characters
+                avatarUrl:
+                  type: string
+                  description: http(s) link or empty
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/users/me/password:
+    post:
+      tags:
+      - Users
+      summary: Change password. Ends all other sessions.
+      description: 'Access: Signed in. Returns `{ ok }`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  description: Must match the current password
+                newPassword:
+                  type: string
+                  description: Same rules as registration
+              required:
+              - currentPassword
+              - newPassword
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/users/me/dashboard:
+    get:
+      tags:
+      - Users
+      summary: Counts, the next 3 sessions and up to 3 of my groups.
+      description: 'Access: Signed in. Returns `{ counts, upcomingSessions, myGroups }`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups:
+    get:
+      tags:
+      - Groups
+      summary: Discover public groups (never returns private groups).
+      description: 'Access: Signed in. Returns `{ items, total, page, pages }`.'
+      parameters:
+      - name: search
+        in: query
+        required: false
+        description: Matches name, subject and description
+        schema:
+          type: string
+      - name: subject
+        in: query
+        required: false
+        description: Exact subject
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        description: popular (default) or newest
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        description: Default 1
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: Default 6, maximum 50
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Groups
+      summary: Create a group. The creator becomes owner and receives an invite code.
+      description: 'Access: Signed in. Returns `group`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 3 to 60 characters
+                description:
+                  type: string
+                  description: 10 to 300 characters
+                subject:
+                  type: string
+                  description: 'One of: Data Structures, Databases, Operating Systems, Web Development, Placements, AI and
+                    ML, Compilers, Networks'
+                visibility:
+                  type: string
+                  description: public or private
+              required:
+              - name
+              - description
+              - subject
+              - visibility
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/mine:
+    get:
+      tags:
+      - Groups
+      summary: Groups I belong to, sorted by name.
+      description: 'Access: Signed in. Returns `group[]`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/join-by-code:
+    post:
+      tags:
+      - Groups
+      summary: Join any group (including private) with its invite code. Strictly rate limited.
+      description: 'Access: Signed in. Returns `group`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Invite code, case-insensitive
+              required:
+              - code
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict (duplicate email, already a member, owner cannot leave)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded; see the Retry-After header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}:
+    get:
+      tags:
+      - Groups
+      summary: Group details. The invite code is included only for members; private groups return 403 to outsiders.
+      description: 'Access: Member (public groups: preview). Returns `group`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Groups
+      summary: Edit name, description, subject or visibility. Unknown fields are ignored.
+      description: 'Access: Owner. Returns `group`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 3 to 60 characters
+                description:
+                  type: string
+                  description: 10 to 300 characters
+                subject:
+                  type: string
+                  description: 'One of: Data Structures, Databases, Operating Systems, Web Development, Placements, AI and
+                    ML, Compilers, Networks'
+                visibility:
+                  type: string
+                  description: public or private
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Groups
+      summary: Delete the group and everything in it (memberships, resources, posts, comments, sessions).
+      description: 'Access: Owner. Returns `{ ok }`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/join:
+    post:
+      tags:
+      - Groups
+      summary: Join a public group.
+      description: 'Access: Signed in. Returns `group`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict (duplicate email, already a member, owner cannot leave)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/leave:
+    delete:
+      tags:
+      - Groups
+      summary: Leave a group. Owners must transfer ownership or delete the group.
+      description: 'Access: Member. Returns `{ ok }`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict (duplicate email, already a member, owner cannot leave)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/transfer-ownership:
+    post:
+      tags:
+      - Groups
+      summary: Make another member the owner; the old owner becomes a moderator.
+      description: 'Access: Owner. Returns `group`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: A current member other than yourself
+              required:
+              - userId
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/members:
+    get:
+      tags:
+      - Members
+      summary: Members with roles, owner first.
+      description: 'Access: Member. Returns `member[]`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/members/{target_id}:
+    patch:
+      tags:
+      - Members
+      summary: Set a member's role to moderator or member.
+      description: 'Access: Owner. Returns `{ userId, role }`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: target_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  description: moderator or member
+              required:
+              - role
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Members
+      summary: Remove a member. Moderators can remove only plain members; nobody can remove the owner.
+      description: 'Access: Owner / moderator. Returns `{ ok }`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: target_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/resources:
+    get:
+      tags:
+      - Resources
+      summary: List resources, newest first. Total count is in the X-Total-Count header.
+      description: 'Access: Member. Returns `resource[]`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        description: link, file or note
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: false
+        description: Matches title and tags
+        schema:
+          type: string
+      - name: tag
+        in: query
+        required: false
+        description: Exact tag
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        description: Default 1
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: Default and maximum 100
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Resources
+      summary: Share a resource. Notifies the other members.
+      description: 'Access: Member. Returns `resource`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 3 to 100 characters
+                type:
+                  type: string
+                  description: link, file or note
+                url:
+                  type: string
+                  description: Required for link and file; http(s) only, up to 2048 characters
+                body:
+                  type: string
+                  description: Required for note; 10 to 5000 characters
+                tags:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - title
+              - type
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/resources/{resource_id}:
+    patch:
+      tags:
+      - Resources
+      summary: Edit title, link or note text, or tags.
+      description: 'Access: Uploader / moderator / owner. Returns `resource`.'
+      parameters:
+      - name: resource_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 3 to 100 characters
+                url:
+                  type: string
+                  description: Required for link and file; http(s) only, up to 2048 characters
+                body:
+                  type: string
+                  description: Required for note; 10 to 5000 characters
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Resources
+      summary: Delete a resource and its tags.
+      description: 'Access: Uploader / moderator / owner. Returns `{ ok }`.'
+      parameters:
+      - name: resource_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/posts:
+    get:
+      tags:
+      - Discussion
+      summary: List discussion posts, newest first, with comment counts. Total in X-Total-Count.
+      description: 'Access: Member. Returns `post[]`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        description: Default 1
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: false
+        description: Default 50, maximum 100
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Discussion
+      summary: Start a discussion. Notifies the other members.
+      description: 'Access: Member. Returns `post`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 5 to 120 characters
+                body:
+                  type: string
+                  description: 10 to 5000 characters
+              required:
+              - title
+              - body
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/posts/{post_id}:
+    get:
+      tags:
+      - Discussion
+      summary: A post with its group and comments (oldest first).
+      description: 'Access: Member. Returns `post + { group, comments[] }`.'
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Discussion
+      summary: Edit title or body.
+      description: 'Access: Author. Returns `post`.'
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 5 to 120 characters
+                body:
+                  type: string
+                  description: 10 to 5000 characters
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Discussion
+      summary: Delete a post and its comments.
+      description: 'Access: Author / moderator / owner. Returns `{ ok }`.'
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/posts/{post_id}/comments:
+    post:
+      tags:
+      - Discussion
+      summary: Reply to a post. Notifies the post's author.
+      description: 'Access: Member. Returns `comment`.'
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: 2 to 1000 characters
+              required:
+              - body
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/comments/{comment_id}:
+    delete:
+      tags:
+      - Discussion
+      summary: Delete a comment.
+      description: 'Access: Author / moderator / owner. Returns `{ ok }`.'
+      parameters:
+      - name: comment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/groups/{group_id}/sessions:
+    get:
+      tags:
+      - Sessions
+      summary: All sessions of a group in time order (past and future).
+      description: 'Access: Member. Returns `session[]`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Sessions
+      summary: Schedule a session. The organiser is marked going; members are notified.
+      description: 'Access: Moderator / owner. Returns `session`.'
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 3 to 100 characters
+                startsAt:
+                  type: string
+                  description: ISO 8601 date-time in the future (a missing offset means UTC)
+                durationMin:
+                  type: integer
+                  description: 15 to 300 (a numeric string such as "60" is accepted)
+                meetingLink:
+                  type: string
+                  description: http(s) link or empty
+              required:
+              - title
+              - startsAt
+              - durationMin
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/sessions:
+    get:
+      tags:
+      - Sessions
+      summary: Upcoming sessions across all my groups.
+      description: 'Access: Signed in. Returns `session[]`.'
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: Default 50, maximum 100
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/sessions/{session_id}:
+    patch:
+      tags:
+      - Sessions
+      summary: Edit a session.
+      description: 'Access: Moderator / owner. Returns `session`.'
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 3 to 100 characters
+                startsAt:
+                  type: string
+                  description: ISO 8601 date-time in the future (a missing offset means UTC)
+                durationMin:
+                  type: integer
+                  description: 15 to 300 (a numeric string such as "60" is accepted)
+                meetingLink:
+                  type: string
+                  description: http(s) link or empty
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Sessions
+      summary: Delete a session and its RSVPs.
+      description: 'Access: Moderator / owner. Returns `{ ok }`.'
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/sessions/{session_id}/rsvp:
+    put:
+      tags:
+      - Sessions
+      summary: Set my RSVP (idempotent).
+      description: 'Access: Member. Returns `session`.'
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: going, maybe or no
+              required:
+              - status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Signed in but not allowed (not a member, or the role is too low)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation failed; `errors` maps each field to a message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: My notifications, newest first.
+      description: 'Access: Signed in. Returns `notification[]`.'
+      parameters:
+      - name: unread
+        in: query
+        required: false
+        description: true to list only unread
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        required: false
+        description: Default 50, maximum 100
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/notifications/read-all:
+    patch:
+      tags:
+      - Notifications
+      summary: Mark all my notifications as read.
+      description: 'Access: Signed in. Returns `{ updated }`.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/notifications/{notification_id}/read:
+    patch:
+      tags:
+      - Notifications
+      summary: Mark one notification as read. Other people's notifications return 404.
+      description: 'Access: Signed in. Returns `notification`.'
+      parameters:
+      - name: notification_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: Missing, invalid or expired token, or wrong credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The resource does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data: {}
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: string
