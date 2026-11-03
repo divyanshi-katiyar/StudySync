@@ -1,0 +1,26 @@
+{
+  "latency": {
+    "listeners": 39,
+    "delivered": 39,
+    "post_response_ms": 37.4,
+    "push_ms": {
+      "min": 12.6,
+      "median": 22.4,
+      "p95": 32.1,
+      "max": 33.1
+    }
+  },
+  "capacity": {
+    "open_streams": 60,
+    "hub_connections": 98,
+    "dashboard_ms": {
+      "median": 3.4,
+      "p95": 4.8
+    }
+  },
+  "environment": {
+    "python": "3.12.3",
+    "server": "werkzeug threaded dev server",
+    "note": "one machine, loopback"
+  }
+}
