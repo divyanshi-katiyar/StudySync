@@ -1,0 +1,41 @@
+Before/after, in-process profile (ms per request, mean of 300 / 150 requests). Same script, same machine.
+
+demo data
+Endpoint                            before   after   faster   SQL stmts
+GET /api/health                       1.51    0.83    45.0%   1 -> 1
+GET /api/users/me                     2.22    1.09    50.9%   1 -> 1
+GET /api/users/me/dashboard           2.26    1.45    35.8%   6 -> 4
+GET /api/groups (discover)            2.24    1.50    33.0%   3 -> 3
+GET /api/groups?search=group          2.22    1.70    23.4%   3 -> 3
+GET /api/groups/mine                  1.97    1.67    15.2%   2 -> 2
+GET /api/groups/g1                    1.75    1.05    40.0%   2 -> 2
+GET /api/groups/g1/resources          2.15    1.23    42.8%   6 -> 6
+GET /api/groups/g1/posts              2.19    1.15    47.5%   5 -> 5
+GET /api/posts/p1                     1.85    0.92    50.3%   6 -> 6
+GET /api/sessions                     1.96    1.22    37.8%   2 -> 2
+GET /api/notifications                1.90    1.26    33.7%   2 -> 2
+ALL ENDPOINTS (sum of means)         24.22   15.07    37.8%
+
+large data (2,008 groups, 18,069 memberships, 10,210 resources)
+Endpoint                            before   after   faster   SQL stmts
+GET /api/health                       1.37    0.86    37.2%   1 -> 1
+GET /api/users/me                     1.58    1.18    25.3%   1 -> 1
+GET /api/users/me/dashboard           2.38    1.58    33.6%   6 -> 4
+GET /api/groups (discover)            5.12    1.41    72.5%   3 -> 3
+GET /api/groups?search=group          2.96    1.79    39.5%   3 -> 3
+GET /api/groups/mine                  3.64    2.00    45.1%   2 -> 2
+GET /api/groups/g1                    1.86    1.13    39.2%   2 -> 2
+GET /api/groups/g1/resources          2.44    1.26    48.4%   6 -> 6
+GET /api/groups/g1/posts              1.85    1.01    45.4%   5 -> 5
+GET /api/posts/p1                     1.98    1.63    17.7%   6 -> 6
+GET /api/sessions                     1.90    1.27    33.2%   2 -> 2
+GET /api/notifications                1.61    1.18    26.7%   2 -> 2
+ALL ENDPOINTS (sum of means)         28.69   16.30    43.2%
+
+Over real HTTP, 20 concurrent clients for 10 s (benchmark.py):
+  requests_per_second    before    220.1   after    468.9
+  mean                   before    90.31   after    42.52
+  p50                    before    86.08   after    41.22
+  p95                    before   167.33   after     81.8
+  p99                    before   206.56   after    98.99
+  errors                 before        0   after        0

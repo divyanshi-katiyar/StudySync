@@ -3,6 +3,7 @@
 Each rule returns an error message or '' (valid). `check()` raises one 422 listing every invalid field.
 """
 import re
+import unicodedata
 from urllib.parse import urlparse
 
 from flask import request
@@ -10,7 +11,7 @@ from flask import request
 from .errors import ApiError
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-PASSWORD_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).{8,}$")
+PASSWORD_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*[0-9]).{8,}$", re.DOTALL)  # ASCII letters and digits only; any character (even a new line) may appear
 TAG_RE = re.compile(r"[^a-z0-9_-]")
 
 
@@ -18,12 +19,34 @@ def text(value) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
+def visible(value) -> str:
+    """The text a person can actually see: control and invisible 'format' characters (zero-width spaces and joiners,
+    byte-order marks) are dropped before checking that a field is not empty or too short."""
+    if not isinstance(value, str):
+        return ""
+    return "".join(ch for ch in value if unicodedata.category(ch) not in ("Cc", "Cf")).strip()
+
+
+def normalise_email(value) -> str:
+    """Lower-case and Unicode-normalise (NFKC) so look-alike spellings of one address are the same account."""
+    return unicodedata.normalize("NFKC", text(value)).lower()
+
+
+def single_line(label):
+    """Reject control characters (new lines, NUL, ...) inside names, titles and emails."""
+    def rule(v):
+        if isinstance(v, str) and any(unicodedata.category(ch) == "Cc" for ch in v.strip()):
+            return f"{label} must be a single line of text."
+        return ""
+    return rule
+
+
 def required(label):
-    return lambda v: "" if text(v) else f"Enter {label}."
+    return lambda v: "" if visible(v) else f"Enter {label}."
 
 
 def min_length(n, label):
-    return lambda v: "" if len(text(v)) >= n else f"{label} needs at least {n} characters."
+    return lambda v: "" if len(visible(v)) >= n else f"{label} needs at least {n} characters."
 
 
 def max_length(n, label):
@@ -44,6 +67,8 @@ def url_rule(v):
     value = text(v)
     if len(value) > 2048:
         return "That link is too long."
+    if any(ch.isspace() or unicodedata.category(ch) == "Cc" for ch in value):
+        return "Enter a full link that starts with http:// or https://."
     parsed = urlparse(value)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         return "Enter a full link that starts with http:// or https://."
@@ -74,7 +99,10 @@ def check(rules: dict, values: dict):
 def json_body() -> dict:
     if not request.is_json:
         raise ApiError(415, "Send the request body as JSON (Content-Type: application/json).")
-    data = request.get_json(silent=True)
+    try:
+        data = request.get_json(silent=True)
+    except RecursionError:  # a body nested tens of thousands of levels deep would otherwise crash the request
+        data = None
     if not isinstance(data, dict):
         raise ApiError(400, "The request body must be a JSON object.")
     return data

@@ -1,5 +1,5 @@
 """Study sessions and RSVPs."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import request
 
@@ -7,17 +7,21 @@ from ..db import all_rows, get_db, one
 from ..errors import ApiError
 from ..serializers import SESSION_SQL, session_json
 from ..utils import new_id, now_iso, parse_iso, to_iso
-from ..validation import check, int_arg, max_length, min_length, one_of, required, text, url_rule
+from ..validation import check, int_arg, max_length, min_length, one_of, required, single_line, text, url_rule
 from .common import announce, is_staff, notify, other_member_ids, require_member, user_name
 
-TITLE_RULES = [required("a title"), min_length(3, "Title"), max_length(100, "Title")]
+TITLE_RULES = [required("a title"), single_line("Title"), min_length(3, "Title"), max_length(100, "Title")]
+MAX_DAYS_AHEAD = 730
 
 
 def _starts_at_rule(v):
     when = parse_iso(v)
     if when is None:
         return "Pick a date and time."
-    return "Pick a time in the future." if when <= datetime.now(timezone.utc) else ""
+    now = datetime.now(timezone.utc)
+    if when <= now:
+        return "Pick a time in the future."
+    return "Pick a time within the next two years." if when > now + timedelta(days=MAX_DAYS_AHEAD) else ""
 
 
 def _duration_rule(v):

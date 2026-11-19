@@ -4,14 +4,15 @@ from ..db import get_db, one
 from ..errors import ApiError
 from ..security import burn_password_check, hash_password, revoke_all_refresh_tokens, verify_password
 from ..utils import new_id, now_iso
-from ..validation import check, email_rule, max_length, min_length, password_rule, required, text, url_rule
+from ..validation import check, email_rule, max_length, min_length, normalise_email, password_rule, required, single_line, text, url_rule
 
-NAME_RULES = [required("your name"), min_length(2, "Name"), max_length(60, "Name")]
+NAME_RULES = [required("your name"), single_line("Name"), min_length(2, "Name"), max_length(60, "Name")]
+EMAIL_RULES = [required("your email"), single_line("Email"), email_rule]
 
 
 def register(data: dict):
-    check({"name": NAME_RULES, "email": [required("your email"), email_rule], "password": [required("a password"), password_rule]}, data)
-    email = text(data["email"]).lower()
+    check({"name": NAME_RULES, "email": EMAIL_RULES, "password": [required("a password"), password_rule]}, data)
+    email = normalise_email(data["email"])
     if one("SELECT 1 FROM users WHERE email = ?", (email,)):
         raise ApiError(409, "That email is already registered.", {"email": "An account with this email already exists. Try logging in instead."})
     user_id = new_id("u")
@@ -29,8 +30,8 @@ def register(data: dict):
 
 def authenticate(data: dict):
     """Returns the user row, or raises a generic 401 that never says which half was wrong."""
-    check({"email": [required("your email"), email_rule], "password": [required("your password")]}, data)
-    user = one("SELECT * FROM users WHERE email = ?", (text(data["email"]).lower(),))
+    check({"email": EMAIL_RULES, "password": [required("your password")]}, data)
+    user = one("SELECT * FROM users WHERE email = ?", (normalise_email(data["email"]),))
     password = data["password"] if isinstance(data["password"], str) else ""
     if user is None:
         burn_password_check(password)

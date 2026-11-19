@@ -1,0 +1,22 @@
+85 cases, 21 mismatches
+  required   '\u200b'                                                       client=accepts  server=rejects
+  required   '\u200b\u200b\u200b\u200b\u200b'                               client=accepts  server=rejects
+  required   ' \u200b '                                                     client=accepts  server=rejects
+  minLength  '\u200b\u200b\u200b'                                           client=accepts  server=rejects
+  minLength  '😀😀'                                                           client=accepts  server=rejects
+  maxLength  '😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀...   client=rejects  server=accepts
+  singleLine 'Alex\nRao'                                                    client=accepts  server=rejects
+  singleLine 'Alex\x00Rao'                                                  client=accepts  server=rejects
+  singleLine 'tab\tinside'                                                  client=accepts  server=rejects
+  email      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...   client=accepts  server=rejects
+  password   'a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1...   client=accepts  server=rejects
+  password   'abcdefg٣'                                                     client=rejects  server=accepts
+  password   'abcdefgh٣'                                                    client=rejects  server=accepts
+  password   'abc12345\r'                                                   client=rejects  server=accepts
+  password   'abc12345\n'                                                   client=rejects  server=accepts
+  url        'https://exa mple.com'                                         client=rejects  server=accepts
+  url        'http:/example.com'                                            client=accepts  server=rejects
+  url        'http:///example.com'                                          client=accepts  server=rejects
+  url        'https:\\\\example.com'                                        client=accepts  server=rejects
+  url        'https://a.co/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...   client=accepts  server=rejects
+  url        'https://ex\x00ample.com'                                      client=rejects  server=accepts

@@ -126,6 +126,30 @@ class StreamTests(LiveCase):
         time.sleep(0.5)
         self.assertEqual(s.types(), ["ready"])
 
+    def test_a_change_that_is_rolled_back_never_produces_live_events(self):
+        """Events are queued while the transaction is still open. If it fails afterwards, nobody may hear about a change that never happened."""
+        from unittest import mock
+        from studysync.services import content
+
+        owner, member = self.actor(), self.actor()
+        g = self.group(owner)
+        self.joined(g, member)
+        s = self.stream(owner)
+        s.wait_for("ready")
+        real_announce = content.announce
+
+        def announce_then_fail(*args, **kwargs):
+            real_announce(*args, **kwargs)  # the notification and the group event are both queued by now
+            raise RuntimeError("database error right before commit")
+
+        with mock.patch.object(content, "announce", side_effect=announce_then_fail), self.assertLogs("studysync", level="ERROR"):
+            res = member.post(f"/api/groups/{g['id']}/resources", json={"title": "Never saved", "type": "link", "url": "https://example.com/x", "tags": []})
+        self.assertEqual(res.status_code, 500)
+        time.sleep(0.5)
+        self.assertEqual(s.types(), ["ready"])
+        self.assertEqual(self.sql("SELECT COUNT(*) FROM resources")[0][0], 0)
+        self.assertEqual(self.sql("SELECT COUNT(*) FROM notifications WHERE type = 'resource'")[0][0], 0)
+
     def test_events_arrive_after_the_data_is_saved(self):
         owner, member = self.actor(), self.actor()
         g = self.group(owner)

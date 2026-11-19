@@ -37,8 +37,11 @@ class SessionTests(SessionCase):
         self.assertEqual(res.get_json()["data"]["durationMin"], 60)
 
     def test_offset_times_are_stored_as_utc(self):
-        res = self.owner.post(self.url, json={"title": "Offset time", "startsAt": "2099-01-01T10:00:00+05:30", "durationMin": 60})
-        self.assertEqual(res.get_json()["data"]["startsAt"], "2099-01-01T04:30:00.000Z")
+        from datetime import datetime, timedelta, timezone
+        when = (datetime.now(timezone.utc) + timedelta(days=30)).replace(microsecond=0)
+        local = when.astimezone(timezone(timedelta(hours=5, minutes=30))).isoformat()  # e.g. 2026-11-30T10:00:00+05:30
+        res = self.owner.post(self.url, json={"title": "Offset time", "startsAt": local, "durationMin": 60})
+        self.assertEqual(res.get_json()["data"]["startsAt"], when.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
 
     def test_list_is_members_only_and_ordered(self):
         later, sooner = self.session(self.owner, self.g, "Later", 48), self.session(self.owner, self.g, "Sooner", 10)

@@ -1,0 +1,29 @@
+Tests run: 127, failures: 0, errors: 0
+
+File                                          Lines  Miss   Cover  Missing lines
+studysync/__init__.py                            76     2   97.4%  28,85
+studysync/config.py                              32     0  100.0%  
+studysync/db.py                                  31     1   96.8%  47
+studysync/errors.py                              39     0  100.0%  
+studysync/ratelimit.py                           40     4   90.0%  20,32,53-54
+studysync/realtime.py                            78     1   98.7%  54
+studysync/routes/auth.py                         57     0  100.0%  
+studysync/routes/content.py                      58     0  100.0%  
+studysync/routes/groups.py                       62     0  100.0%  
+studysync/routes/sessions.py                     45     0  100.0%  
+studysync/routes/stream.py                       17     0  100.0%  
+studysync/routes/users.py                        27     0  100.0%  
+studysync/security.py                           116     1   99.1%  110
+studysync/seed.py                                70    70    0.0%  1,5,7-9,11,14-15,17-24,26-31,33,35,37,47-49,52-60,62-64,67-77,79-80,82,88-89,94,96-101,103-104,106,112-115
+studysync/serializers.py                         27     0  100.0%  
+studysync/services/auth.py                       57     3   94.7%  25-26,57
+studysync/services/common.py                     37     0  100.0%  
+studysync/services/content.py                   201     3   98.5%  108,110,220
+studysync/services/groups.py                    171     3   98.2%  84-86
+studysync/services/notifications.py              42     0  100.0%  
+studysync/services/sessions.py                   92     0  100.0%  
+studysync/subjects.py                            13     0  100.0%  
+studysync/utils.py                               25     2   92.0%  15,22
+studysync/validation.py                          74     2   97.3%  46,103
+--------------------------------------------------------------------------------
+TOTAL                                          1487    92   93.8%

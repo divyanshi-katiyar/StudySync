@@ -4,12 +4,12 @@ from flask import request
 from ..db import all_rows, get_db, one
 from ..errors import ApiError
 from ..utils import like_pattern, new_id, now_iso
-from ..validation import check, clean_tags, int_arg, max_length, min_length, one_of, required, text, url_rule
+from ..validation import check, clean_tags, int_arg, max_length, min_length, one_of, required, single_line, text, url_rule
 from .common import announce, is_staff, membership_of, notify, other_member_ids, require_member, user_name
 
 RESOURCE_TYPES = ("link", "file", "note")
 RESOURCE_SQL = "SELECT r.*, u.name AS uploader_name FROM resources r LEFT JOIN users u ON u.id = r.uploaded_by"
-TITLE_RULES = [required("a title"), min_length(3, "Title"), max_length(100, "Title")]
+TITLE_RULES = [required("a title"), single_line("Title"), min_length(3, "Title"), max_length(100, "Title")]
 
 
 # ---------- resources ----------
@@ -135,7 +135,7 @@ def delete_resource(resource_id: str, user_id: str):
 
 
 # ---------- posts ----------
-POST_RULES = {"title": [required("a title"), min_length(5, "Title"), max_length(120, "Title")], "body": [required("some details"), min_length(10, "Details"), max_length(5000, "Details")]}
+POST_RULES = {"title": [required("a title"), single_line("Title"), min_length(5, "Title"), max_length(120, "Title")], "body": [required("some details"), min_length(10, "Details"), max_length(5000, "Details")]}
 POST_SQL = (
     "SELECT p.*, u.name AS author_name, (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count "
     "FROM posts p LEFT JOIN users u ON u.id = p.author_id"

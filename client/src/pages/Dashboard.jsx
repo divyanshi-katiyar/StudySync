@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { CalendarDays, Library } from 'lucide-react'
 import { dashboard } from '../api'
 import { useAsync } from '../hooks/useAsync'
-import { useLiveUpdates } from '../context/RealtimeContext'
+import { RELOAD_DEBOUNCE_MS, useLiveUpdates } from '../context/RealtimeContext'
 import { useRsvp } from '../hooks/useRsvp'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/AuthContext'
@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const { items: notifications } = useNotifications()
   const { data, error, loading, reload, setData } = useAsync(() => dashboard.get(), [])
-  useLiveUpdates((e) => e.type === 'group.updated' && ['sessions', 'resources', 'members', 'deleted'].includes(e.kind), reload)
+  useLiveUpdates((e) => e.type === 'group.updated' && ['sessions', 'resources', 'members', 'deleted'].includes(e.kind), reload, { debounceMs: RELOAD_DEBOUNCE_MS })
   const onRsvp = useRsvp((updater) => setData((d) => ({ ...d, upcomingSessions: updater(d.upcomingSessions) })))
   const first = user?.name.split(' ')[0]
 

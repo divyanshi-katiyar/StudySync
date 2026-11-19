@@ -1,4 +1,4 @@
-# StudySync: full-stack integration (Week 4)
+# StudySync: full-stack application (Weeks 1 to 5)
 
 StudySync is a collaborative study-group platform: students create or join groups, share resources, discuss questions and schedule sessions.
 This repository joins the three earlier pieces into one running application.
@@ -9,6 +9,7 @@ This repository joins the three earlier pieces into one running application.
 | 2 | React front end (originally on a browser mock database) | `client/` |
 | 3 | Flask REST API and SQLite database | `server/` |
 | 4 | **Integration:** the front end talks to the real API, with live updates | this README, `client/src/api/`, `server/studysync/realtime.py` |
+| 5 | **Testing, debugging, optimization:** 200 API tests, client tests, end-to-end and parity checks, 8 bugs fixed, 38 to 43 % faster responses | [docs/TESTING.md](docs/TESTING.md), [docs/DEBUGGING.md](docs/DEBUGGING.md), [logs/](logs/README.md) |
 
 ```
  Browser (React 18, Vite, Tailwind)                     Flask API                         SQLite
@@ -131,8 +132,8 @@ Week 1 planned Socket.io. The app only needs *server to browser* pushes (user ac
 
 | Layer | Command | Result | What it proves |
 |---|---|---|---|
-| API | `cd server && python -m unittest discover -s tests -t . -v` | **127 tests pass** (about 15 s) | rules, security, permissions, live events over a real socket, docs match code |
-| Front-end clients | `cd client && npm run test:integration` | **17 tests pass** (under 1 s) | token refresh, retry, timeout, SSE parsing, reconnect, expiry handling, no packages needed |
+| API | `cd server && python -m unittest discover -s tests -t . -v` | **200 tests pass** (about 15 s) | rules, security, permissions, live events over a real socket, docs match code |
+| Front-end clients | `cd client && npm run test:integration` | **28 tests pass** (under 1 s) | token refresh, retry, timeout, SSE parsing, reconnect, expiry handling, no packages needed |
 | Whole stack, no browser | `python scripts/e2e.py` (from this folder) | **5 scenarios pass** | the real client code against a real, freshly seeded server: sign-in, dashboard, two users with a change appearing live, error mapping, reload and logout |
 | React interface | `cd client && npm test` | the 23 Week 2 Vitest tests (run on the mock) | components and pages still behave as before |
 
@@ -149,6 +150,30 @@ Week 1 planned Socket.io. The app only needs *server to browser* pushes (user ac
 | 60 open live connections while using the app | dashboard median 3.4 ms, 95th percentile 4.8 ms |
 
 Reproduce with `python server/scripts/benchmark.py` and `python server/scripts/benchmark_live.py`. The Week 1 target was under 300 ms for typical requests.
+
+### 3.1 Week 5: testing strategy, debugging and optimization
+
+One command runs every layer that can run on your machine and writes a dated log to `logs/`:
+
+```bash
+python scripts/run_all_tests.py            # add --quick to skip slow checks, --full to include the mutation check
+```
+
+| Layer | Command | Count |
+|---|---|---|
+| API unit, integration, security, real-time, robustness | `cd server && python -m unittest discover -s tests -t .` | 200 |
+| API line coverage (stdlib tool, floor 95 %) | `cd server && python scripts/coverage_report.py --fail-under 95` | 100 % of 1,581 lines |
+| Client unit tests (HTTP client, live client, utilities) | `cd client && npm run test:integration` | 28 |
+| React hooks (Vitest) | `cd client && npm install && npm test` | 24 new + 23 from Week 2 |
+| Form rules equal API rules | `python scripts/parity_check.py` | 85 cases |
+| End to end, real client vs real server | `python scripts/e2e.py` | 5 scenarios |
+| Do the tests notice bugs? | `python scripts/mutation_check.py` | 17 of 17 caught |
+
+What Week 5 produced:
+* **8 bugs fixed**, found by new robustness tests (a refresh-token race that let 6 simultaneous refreshes all succeed, a join race that returned 500 to 7 of 8 callers, RSVPs of people who had left, date overflow, crash on deeply nested JSON, invisible or multi-line names, look-alike Unicode emails) and **21 form/API mismatches** found by the parity check. Evidence before and after the fixes is in `logs/`; explanations in [docs/DEBUGGING.md](docs/DEBUGGING.md).
+* **Performance:** profiling showed connection handling, not queries, as the main cost. A connection pool, a trigger-maintained member count with an index, and fewer dashboard queries made the 12 read endpoints **38 % (demo data) to 43 % (large data) faster**, discovery **72 % faster**, and throughput under 20 concurrent clients went from **220 to 469 requests per second** (p95 167 ms to 82 ms). Table in [docs/TESTING.md](docs/TESTING.md#5-optimization-summary).
+* **Test quality:** line coverage rose from 93.8 % to 100 %, and a mutation check (deliberately breaking 17 lines) confirmed the tests fail when the code is wrong.
+* **Not verified in this environment:** the 23 Week 2 Vitest tests, the production build, and the GitHub Actions workflow (`.github/workflows/ci.yml`). Run `npm test`, `npm run build` and `python scripts/run_all_tests.py --full` on your machine.
 
 ## 4. Challenges and solutions
 
@@ -177,7 +202,7 @@ Reproduce with `python server/scripts/benchmark.py` and `python server/scripts/b
 * The rate limiter is also in memory (same Redis step). SQLite needs a persistent disk, or move to PostgreSQL, before real users arrive.
 * With the front end on one site and the API on another, set `STUDYSYNC_CORS_ORIGINS`, `STUDYSYNC_COOKIE_SAMESITE=None` and `STUDYSYNC_COOKIE_SECURE=true`, serve both over HTTPS, and set `STUDYSYNC_TRUST_PROXY=true` behind a proxy.
 * No live deployment is included; the application is run locally (section 1).
-* **Verified here:** the API (127 tests), the client modules (16 tests), the whole stack through the real client code (5 scenarios), and syntax of every changed React file.
+* **Verified here:** the API (200 tests), the client modules (28 tests), the whole stack through the real client code (5 scenarios), and syntax of every changed React file.
   **Run on your machine before submitting:** `npm install`, `npm test`, `npm run build` and the two-window live demo in section 1, because the React interface itself could not be rendered in the environment where this was prepared.
 * Files are shared as links (no upload), and there is no email (verification, reminders). Both were Could items in Week 1.
 
@@ -187,6 +212,10 @@ Reproduce with `python server/scripts/benchmark.py` and `python server/scripts/b
 README.md                  this file
 scripts/e2e.py             starts a seeded API and runs the full-stack client tests
 docs/DEMO_SCRIPT.md        shot list for the screen recording
+docs/TESTING.md            test strategy, how to run, rationale, optimization summary (Week 5)
+docs/DEBUGGING.md          bugs found, causes, fixes, lessons learned (Week 5)
+logs/                      error logs, before/after evidence, coverage, profiles (index in logs/README.md)
+scripts/                   e2e.py, run_all_tests.py, parity_check.py, mutation_check.py
 client/                    React application
   src/api/                 index.js (switch), http.js, realtime.js, errors.js, mock.js + mockDb.js (Week 2 mock)
   src/context/             Auth, Toast, Notifications, Realtime
@@ -195,6 +224,6 @@ client/                    React application
   src/test/                the Week 2 Vitest tests
 server/                    Flask API (own README with details)
   studysync/               app, routes, services, realtime, security, validation
-  tests/                   127 tests
+  tests/                   200 tests
   docs/                    API.md, openapi.yaml, benchmark results
 ```

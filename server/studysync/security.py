@@ -109,17 +109,23 @@ def rotate_refresh_token(raw: str | None):
     if row is None:
         raise expired
     now = datetime.now(timezone.utc)
+    expired.keep_cookie = False
     if row["revoked_at"] is not None:
         revoked_at = parse_iso(row["revoked_at"])
         if revoked_at and (now - revoked_at).total_seconds() > REUSE_GRACE_SECONDS:
             # An old token came back: assume it was stolen and end every session in this family.
             with db:
                 db.execute("UPDATE refresh_tokens SET revoked_at = ? WHERE family_id = ? AND revoked_at IS NULL", (now_iso(), row["family_id"]))
+        else:
+            expired.keep_cookie = True  # a lost race with another tab: the winner's new cookie must stay
         raise expired
     if parse_iso(row["expires_at"]) <= now:
         raise expired
-    with db:
-        db.execute("UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?", (now_iso(), row["id"]))
+    with db:  # claim the token atomically: only one of several overlapping requests can change revoked_at from NULL
+        claimed = db.execute("UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL", (now_iso(), row["id"])).rowcount
+    if claimed != 1:
+        expired.keep_cookie = True
+        raise expired
     return row["user_id"], issue_refresh_token(row["user_id"], row["family_id"])
 
 

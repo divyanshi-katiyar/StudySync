@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from studysync import create_app
-from studysync.db import connect
+from studysync.db import close_pool, connect
 from studysync.utils import to_iso
 
 PASSWORD = "Password123"
@@ -45,6 +45,7 @@ class ApiTestCase(unittest.TestCase):
         self._n = 0
 
     def tearDown(self):
+        close_pool()  # release pooled connections so the temporary database file can be deleted (matters on Windows)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def actor(self, name="Alex Rao", email=None) -> Actor:

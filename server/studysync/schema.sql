@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS study_groups (
   visibility  TEXT NOT NULL CHECK (visibility IN ('public', 'private')),
   invite_code TEXT NOT NULL UNIQUE,
   owner_id    TEXT NOT NULL REFERENCES users(id),
-  created_at  TEXT NOT NULL
+  created_at  TEXT NOT NULL,
+  member_count INTEGER NOT NULL DEFAULT 0  -- kept in step with memberships by the triggers below
 );
 CREATE INDEX IF NOT EXISTS idx_groups_discovery ON study_groups(visibility, subject);
+CREATE INDEX IF NOT EXISTS idx_groups_popular ON study_groups(visibility, member_count DESC, name);
 
 CREATE TABLE IF NOT EXISTS memberships (
   id        TEXT PRIMARY KEY,
@@ -35,6 +37,17 @@ CREATE TABLE IF NOT EXISTS memberships (
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON memberships(user_id);
 -- A group has exactly one owner (enforced by the database, not just by service code).
 CREATE UNIQUE INDEX IF NOT EXISTS idx_one_owner_per_group ON memberships(group_id) WHERE role = 'owner';
+
+-- Member counts live on the group row so discovery can sort by popularity without counting every group's members on each request.
+-- Triggers (not application code) keep the number right for every path: join, leave, remove, delete group, seed, bulk loads.
+CREATE TRIGGER IF NOT EXISTS trg_member_added AFTER INSERT ON memberships
+BEGIN
+  UPDATE study_groups SET member_count = member_count + 1 WHERE id = NEW.group_id;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_member_removed AFTER DELETE ON memberships
+BEGIN
+  UPDATE study_groups SET member_count = member_count - 1 WHERE id = OLD.group_id;
+END;
 
 CREATE TABLE IF NOT EXISTS resources (
   id          TEXT PRIMARY KEY,

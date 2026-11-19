@@ -56,6 +56,19 @@ export function createHttpApi(baseUrl, fetchImpl = (...args) => fetch(...args), 
     return refreshing
   }
 
+  /** Identical GET requests made at the same moment (React StrictMode runs effects twice in development; two components may ask for the same list) share one network call. */
+  const inFlight = new Map()
+  function call(method, path, opts = {}) {
+    if (method !== 'GET') return callWithRetry(method, path, opts)
+    const key = path + JSON.stringify(opts.query ?? {})
+    let promise = inFlight.get(key)
+    if (!promise) {
+      promise = callWithRetry(method, path, opts).finally(() => inFlight.delete(key))
+      inFlight.set(key, promise)
+    }
+    return promise.then((data) => structuredClone(data)) // each caller gets its own copy, so one component changing it cannot affect another
+  }
+
   const transient = (err) => err.status === 0 || [502, 503, 504].includes(err.status)
 
   async function once(method, path, opts) {
@@ -70,7 +83,7 @@ export function createHttpApi(baseUrl, fetchImpl = (...args) => fetch(...args), 
   }
 
   /** Reads are retried once after a network failure or a 502/503/504; writes never are (they might have been applied). */
-  async function call(method, path, opts = {}) {
+  async function callWithRetry(method, path, opts = {}) {
     try {
       return await once(method, path, opts)
     } catch (err) {

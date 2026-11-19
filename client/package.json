@@ -10,8 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "node --test --test-timeout=20000 tests-node/http.test.mjs tests-node/realtime.test.mjs",
-    "test:e2e": "python ../scripts/e2e.py"
+    "test:integration": "node --test --test-timeout=20000 tests-node/http.test.mjs tests-node/realtime.test.mjs tests-node/utils.test.mjs",
+    "test:e2e": "python ../scripts/e2e.py",
+    "test:all": "npm test && npm run test:integration && python ../scripts/e2e.py"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

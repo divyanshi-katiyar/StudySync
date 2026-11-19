@@ -116,3 +116,47 @@ test('the app is told when the session can no longer be renewed', async () => {
   await assert.rejects(api.groups.mine())
   assert.equal(ended, 1, 'unsubscribed listeners are not called')
 })
+
+test('identical GET requests made at the same time share one network call', async () => {
+  let calls = 0
+  const { fetchImpl } = fake({
+    ...login,
+    'GET /api/groups/mine': async () => {
+      calls++
+      await new Promise((r) => setTimeout(r, 20))
+      return jsonResponse([{ id: 'g1', tags: ['a'] }])
+    },
+  })
+  const api = createHttpApi('http://api.test/api', fetchImpl)
+  const [a, b, c] = await Promise.all([api.groups.mine(), api.groups.mine(), api.groups.mine()])
+  assert.equal(calls, 1)
+  assert.deepEqual(a, b)
+  a[0].tags.push('changed')
+  assert.deepEqual(c[0].tags, ['a'], 'each caller gets its own copy')
+  await api.groups.mine()
+  assert.equal(calls, 2, 'a later request is a new call, nothing is cached')
+})
+
+test('different URLs, queries and writes are never merged', async () => {
+  let gets = 0
+  let posts = 0
+  const { fetchImpl } = fake({
+    ...login,
+    'GET /api/groups': () => (gets++, jsonResponse({ items: [] })),
+    'POST /api/groups': () => (posts++, jsonResponse({ id: 'g' }, 201)),
+  })
+  const api = createHttpApi('http://api.test/api', fetchImpl)
+  await Promise.all([api.groups.list({ search: 'a' }), api.groups.list({ search: 'b' }), api.groups.list({ search: 'a' })])
+  assert.equal(gets, 2, 'two distinct queries, the repeated one is shared')
+  await Promise.all([api.groups.create({ name: 'x' }), api.groups.create({ name: 'x' })])
+  assert.equal(posts, 2, 'two writes are two writes')
+})
+
+test('a failed shared GET fails every waiting caller, then the next call tries again', async () => {
+  let n = 0
+  const { fetchImpl } = fake({ ...login, 'GET /api/sessions': () => (++n <= 1 ? jsonResponse({ message: 'down' }, 500) : jsonResponse(['ok'])) })
+  const api = createHttpApi('http://api.test/api', fetchImpl)
+  const results = await Promise.allSettled([api.sessions.upcoming(), api.sessions.upcoming()])
+  assert.deepEqual(results.map((r) => r.status), ['rejected', 'rejected'])
+  assert.deepEqual(await api.sessions.upcoming(), ['ok'])
+})

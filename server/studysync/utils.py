@@ -24,7 +24,12 @@ def parse_iso(value) -> datetime | None:
         dt = datetime.fromisoformat(value.strip())
     except ValueError:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    dt = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    try:
+        dt.astimezone(timezone.utc)  # years 1 and 9999 with an offset overflow when converted to UTC
+    except (OverflowError, ValueError):
+        return None
+    return dt
 
 
 def new_id(prefix: str) -> str:

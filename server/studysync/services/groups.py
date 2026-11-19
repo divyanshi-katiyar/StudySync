@@ -8,12 +8,12 @@ from ..errors import ApiError
 from ..serializers import GROUP_SQL, group_json
 from ..subjects import SUBJECTS
 from ..utils import like_pattern, new_id, now_iso
-from ..validation import check, int_arg, max_length, min_length, one_of, required, text
+from ..validation import check, int_arg, max_length, min_length, one_of, required, single_line, text
 from .common import announce, group_row_or_404, membership_of, notify, other_member_ids, require_member, user_name
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I so codes are easy to read aloud
 GROUP_RULES = {
-    "name": [required("a group name"), min_length(3, "Group name"), max_length(60, "Group name")],
+    "name": [required("a group name"), single_line("Group name"), min_length(3, "Group name"), max_length(60, "Group name")],
     "description": [required("a short description"), min_length(10, "Description"), max_length(300, "Description")],
     "subject": [one_of(SUBJECTS, "Choose a subject.")],
     "visibility": [one_of(("public", "private"), "Choose who can find this group.")],
@@ -114,7 +114,16 @@ def delete_group(group_id: str, user_id: str):
 
 
 def _add_member(group, user_id: str):
+    """Insert the membership. Two requests can both pass the 'already a member?' check; the database's unique index then
+    stops the second one, and that loss is reported as the normal 409 instead of a crash."""
     db = get_db()
+    try:
+        _insert_member(db, group, user_id)
+    except sqlite3.IntegrityError:
+        raise ApiError(409, "You are already in this group.")
+
+
+def _insert_member(db, group, user_id: str):
     with db:
         db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
         notify(other_member_ids(group["id"], user_id), "member", f"{user_name(user_id)} joined {group['name']}", f"/app/groups/{group['id']}?tab=members")
@@ -140,8 +149,19 @@ def join_by_code(user_id: str, data: dict) -> dict:
         raise ApiError(404, "No group matches that invite code.", {"code": "No group matches that code. Check it and try again."})
     if membership_of(group["id"], user_id):
         raise ApiError(409, "You are already in this group.", {"code": "You are already in this group."})
-    _add_member(group, user_id)
+    try:
+        _add_member(group, user_id)
+    except ApiError as err:
+        raise ApiError(err.status, err.message, {"code": err.message})
     return group_json(_group(group["id"], user_id))
+
+
+def _forget_rsvps(db, group_id: str, user_id: str):
+    """Someone who is no longer in the group must not keep counting as 'going' or 'maybe' for its sessions."""
+    db.execute(
+        "DELETE FROM session_attendees WHERE user_id = ? AND session_id IN (SELECT id FROM study_sessions WHERE group_id = ?)",
+        (user_id, group_id),
+    )
 
 
 def leave_group(group_id: str, user_id: str):
@@ -151,6 +171,7 @@ def leave_group(group_id: str, user_id: str):
     db = get_db()
     with db:
         db.execute("DELETE FROM memberships WHERE id = ?", (membership["id"],))
+        _forget_rsvps(db, group_id, user_id)
         announce(group_id, "members", exclude_user_id=user_id)
 
 
@@ -190,6 +211,7 @@ def remove_member(group_id: str, user_id: str, target_id: str):
     db = get_db()
     with db:
         db.execute("DELETE FROM memberships WHERE id = ?", (target["id"],))
+        _forget_rsvps(db, group_id, target_id)
         announce(group_id, "members", exclude_user_id=user_id, extra_recipients=[target_id])
 
 

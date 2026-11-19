@@ -1,0 +1,42 @@
+# Runs every test layer on each push and pull request.
+# NOTE: written for GitHub Actions but not executed while preparing the Week 5 submission (no network there); check the first run.
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r server/requirements.txt
+      - name: API tests
+        run: cd server && python -m unittest discover -s tests -t . -v
+      - name: Coverage (floor 95 %)
+        run: cd server && python scripts/coverage_report.py --fail-under 95
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r server/requirements.txt
+      - run: cd client && npm ci
+      - name: React tests (Vitest)
+        run: cd client && npm test
+      - name: Client Node tests
+        run: cd client && npm run test:integration
+      - name: Validation parity between form and API
+        run: python scripts/parity_check.py
+      - name: End-to-end (real client against real API)
+        run: python scripts/e2e.py
+      - name: Production build
+        run: cd client && npm run build

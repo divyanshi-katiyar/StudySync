@@ -37,13 +37,16 @@ def mark_all_read(user_id: str) -> dict:
 def dashboard(user_id: str) -> dict:
     now = datetime.now(timezone.utc)
     week_ahead, week_ago = to_iso(now + timedelta(days=7)), to_iso(now - timedelta(days=7))
-    groups = one("SELECT COUNT(*) AS n FROM memberships WHERE user_id = ?", (user_id,))["n"]
     mine = "s.group_id IN (SELECT group_id FROM memberships WHERE user_id = :uid)"
-    this_week = one(f"SELECT COUNT(*) AS n FROM study_sessions s WHERE {mine} AND s.starts_at > :now AND s.starts_at < :ahead", {"uid": user_id, "now": now_iso(), "ahead": week_ahead})["n"]
-    new_resources = one(
-        "SELECT COUNT(*) AS n FROM resources r WHERE r.group_id IN (SELECT group_id FROM memberships WHERE user_id = ?) AND r.uploaded_by != ? AND r.created_at > ?",
-        (user_id, user_id, week_ago),
-    )["n"]
+    counts = one(
+        f"""SELECT
+              (SELECT COUNT(*) FROM memberships WHERE user_id = :uid) AS groups,
+              (SELECT COUNT(*) FROM study_sessions s WHERE {mine} AND s.starts_at > :now AND s.starts_at < :ahead) AS this_week,
+              (SELECT COUNT(*) FROM resources r WHERE r.group_id IN (SELECT group_id FROM memberships WHERE user_id = :uid)
+                                                   AND r.uploaded_by != :uid AND r.created_at > :week_ago) AS new_resources""",
+        {"uid": user_id, "now": now_iso(), "ahead": week_ahead, "week_ago": week_ago},
+    )
+    groups, this_week, new_resources = counts["groups"], counts["this_week"], counts["new_resources"]
     sessions = all_rows(f"{SESSION_SQL} WHERE {mine} AND s.starts_at > :now ORDER BY s.starts_at LIMIT 3", {"uid": user_id, "now": now_iso()})
     my_groups = all_rows(GROUP_SQL + " WHERE g.id IN (SELECT group_id FROM memberships WHERE user_id = :uid) ORDER BY g.name LIMIT 3", {"uid": user_id, "now": now_iso()})
     return {

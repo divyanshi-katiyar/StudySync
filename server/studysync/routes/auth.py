@@ -8,7 +8,7 @@ from ..serializers import public_user
 from ..services import auth as service
 from ..db import one
 from ..utils import ok
-from ..validation import json_body, text
+from ..validation import json_body, normalise_email
 
 bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -30,7 +30,7 @@ def register():
 def login():
     data = json_body()
     limiter, (limit, window) = current_app.extensions["limiter"], current_app.config["RATE_LIMIT_LOGIN_FAILURES"]
-    key = f"login-fail:{request.remote_addr}:{text(data.get('email')).lower()}"
+    key = f"login-fail:{request.remote_addr}:{normalise_email(data.get('email'))}"
     if current_app.config["RATE_LIMIT_ENABLED"]:
         blocked, retry = limiter.blocked(key, limit, window)
         if blocked:
@@ -52,7 +52,8 @@ def refresh():
         user_id, new_token = rotate_refresh_token(request.cookies.get(REFRESH_COOKIE))
     except ApiError as err:
         response = error_response(err.status, err.message)
-        clear_refresh_cookie(response)
+        if not getattr(err, "keep_cookie", False):  # after a lost race the other tab already holds the new cookie
+            clear_refresh_cookie(response)
         return response
     user = one("SELECT * FROM users WHERE id = ?", (user_id,))
     token, expires_in = create_access_token(user_id)

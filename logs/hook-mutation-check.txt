@@ -1,0 +1,5 @@
+CAUGHT  useAsync shows stale answers (cancel guard removed)   (23 passed, 1 failed)
+CAUGHT  useAsync clears data while reloading   (23 passed, 1 failed)
+CAUGHT  live reloads are not debounced   (21 passed, 3 failed)
+CAUGHT  live handler never unsubscribes   (23 passed, 1 failed)
+CAUGHT  resync events are filtered out   (22 passed, 2 failed)

@@ -1,0 +1,25 @@
+test_a_lost_race_keeps_the_cookie_but_theft_clears_it (tests.test_robustness.CookieAfterLostRaceTests.test_a_lost_race_keeps_the_cookie_but_theft_clears_it) ... ok
+test_people_who_leave_a_group_stop_counting_in_its_rsvps (tests.test_robustness.DataIntegrityTests.test_people_who_leave_a_group_stop_counting_in_its_rsvps) ... ok
+test_removed_members_stop_counting_in_rsvps_and_can_rejoin_cleanly (tests.test_robustness.DataIntegrityTests.test_removed_members_stop_counting_in_rsvps_and_can_rejoin_cleanly) ... ok
+test_rsvps_of_other_groups_are_untouched_when_leaving_one (tests.test_robustness.DataIntegrityTests.test_rsvps_of_other_groups_are_untouched_when_leaving_one) ... ok
+test_a_giant_token_is_just_a_401 (tests.test_robustness.HostileInputTests.test_a_giant_token_is_just_a_401) ... ok
+test_deeply_nested_json_is_a_400_not_a_crash (tests.test_robustness.HostileInputTests.test_deeply_nested_json_is_a_400_not_a_crash) ... ok
+test_emoji_and_non_latin_text_round_trips (tests.test_robustness.HostileInputTests.test_emoji_and_non_latin_text_round_trips) ... ok
+test_huge_numbers_in_query_parameters_are_rejected_cleanly (tests.test_robustness.HostileInputTests.test_huge_numbers_in_query_parameters_are_rejected_cleanly) ... ok
+test_look_alike_unicode_emails_cannot_create_a_second_account (tests.test_robustness.HostileInputTests.test_look_alike_unicode_emails_cannot_create_a_second_account) ... ok
+test_names_made_only_of_invisible_characters_are_rejected (tests.test_robustness.HostileInputTests.test_names_made_only_of_invisible_characters_are_rejected) ... ok
+test_session_dates_outside_a_sane_range_are_a_422_not_a_500 (tests.test_robustness.HostileInputTests.test_session_dates_outside_a_sane_range_are_a_422_not_a_500) ... ok
+test_single_line_fields_reject_control_characters (tests.test_robustness.HostileInputTests.test_single_line_fields_reject_control_characters) ... ok
+test_a_refresh_token_can_only_be_spent_once_even_when_two_requests_overlap (tests.test_robustness.RaceConditionTests.test_a_refresh_token_can_only_be_spent_once_even_when_two_requests_overlap)
+Both overlapping requests read the token as unused. Only one may receive a successor token. ... ok
+test_join_by_code_race_is_a_409_too (tests.test_robustness.RaceConditionTests.test_join_by_code_race_is_a_409_too) ... ok
+test_losing_a_join_race_is_a_409_not_a_500 (tests.test_robustness.RaceConditionTests.test_losing_a_join_race_is_a_409_not_a_500)
+Two requests pass the 'already a member?' check before either inserts. Reproduced deterministically. ... ok
+test_many_simultaneous_joins_give_exactly_one_success (tests.test_robustness.RaceConditionTests.test_many_simultaneous_joins_give_exactly_one_success) ... ok
+test_many_simultaneous_sign_ups_with_one_email_give_one_account (tests.test_robustness.RaceConditionTests.test_many_simultaneous_sign_ups_with_one_email_give_one_account) ... ok
+test_parallel_refreshes_never_create_two_live_tokens (tests.test_robustness.RaceConditionTests.test_parallel_refreshes_never_create_two_live_tokens) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.766s
+
+OK

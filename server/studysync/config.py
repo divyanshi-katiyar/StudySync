@@ -28,6 +28,7 @@ def load_config(env_name: str | None = None) -> dict:
         "RATE_LIMIT_AUTH": (10, 60),
         "RATE_LIMIT_LOGIN_FAILURES": (5, 900),
         "RATE_LIMIT_JOIN_CODE": (10, 60),
+        "DB_POOL": True,
         "SSE_HEARTBEAT_SECONDS": 15,
         "SSE_MAX_STREAMS_PER_USER": 5,
         "TESTING": False,

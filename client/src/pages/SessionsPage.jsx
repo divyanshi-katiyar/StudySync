@@ -1,7 +1,7 @@
 import { CalendarDays } from 'lucide-react'
 import { sessions } from '../api'
 import { useAsync } from '../hooks/useAsync'
-import { useLiveUpdates } from '../context/RealtimeContext'
+import { RELOAD_DEBOUNCE_MS, useLiveUpdates } from '../context/RealtimeContext'
 import { useRsvp } from '../hooks/useRsvp'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Button from '../components/ui/Button'
@@ -13,7 +13,7 @@ import SessionItem from '../components/groups/SessionItem'
 export default function SessionsPage() {
   usePageTitle('Sessions')
   const { data, error, loading, reload, setData } = useAsync(() => sessions.upcoming(), [])
-  useLiveUpdates((e) => e.type === 'group.updated' && ['sessions', 'members', 'deleted'].includes(e.kind), reload)
+  useLiveUpdates((e) => e.type === 'group.updated' && ['sessions', 'members', 'deleted'].includes(e.kind), reload, { debounceMs: RELOAD_DEBOUNCE_MS })
   const onRsvp = useRsvp((updater) => setData((list) => updater(list ?? [])))
 
   return (

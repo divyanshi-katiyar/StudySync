@@ -1,0 +1,332 @@
+FF..Unhandled error: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/auth.py", line 31, in login
+    data = json_body()
+           ^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/validation.py", line 77, in json_body
+    data = request.get_json(silent=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/werkzeug/wrappers/request.py", line 611, in get_json
+    rv = self.json_module.loads(data)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/json/provider.py", line 187, in loads
+    return json.loads(s, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+RecursionError: maximum recursion depth exceeded while decoding a JSON array from a unicode string
+F..FFUnhandled error: date value out of range
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/sessions.py", line 22, in create_session
+    return ok(service.create_session(group_id, uid(), json_body()), 201)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/sessions.py", line 72, in create_session
+    (sid, group_id, user_id, text(data["title"]), to_iso(parse_iso(data["startsAt"])), data["durationMin"], text(data.get("meetingLink")), now_iso()),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/utils.py", line 16, in to_iso
+    return dt.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OverflowError: date value out of range
+FFFUnhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 33, in join_by_code
+    return ok(service.join_by_code(uid(), json_body()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 143, in join_by_code
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+FUnhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+FUnhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Unhandled error: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/security.py", line 76, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/routes/groups.py", line 58, in join
+    return ok(service.join_group(group_id, uid()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 130, in join_group
+    _add_member(group, user_id)
+  File "/home/claude/studysync/server/studysync/services/groups.py", line 119, in _add_member
+    db.execute("INSERT INTO memberships (id, group_id, user_id, role, joined_at) VALUES (?,?,?,?,?)", (new_id("m"), group["id"], user_id, "member", now_iso()))
+sqlite3.IntegrityError: UNIQUE constraint failed: memberships.group_id, memberships.user_id
+F.F
+======================================================================
+FAIL: test_people_who_leave_a_group_stop_counting_in_its_rsvps (tests.test_robustness.DataIntegrityTests.test_people_who_leave_a_group_stop_counting_in_its_rsvps)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 157, in test_people_who_leave_a_group_stop_counting_in_its_rsvps
+    self.assertEqual(owner.get(f"/api/groups/{g['id']}/sessions").get_json()["data"][0]["goingCount"], 1)
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_removed_members_stop_counting_in_rsvps_and_can_rejoin_cleanly (tests.test_robustness.DataIntegrityTests.test_removed_members_stop_counting_in_rsvps_and_can_rejoin_cleanly)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 166, in test_removed_members_stop_counting_in_rsvps_and_can_rejoin_cleanly
+    self.assertEqual(owner.get(f"/api/groups/{g['id']}/sessions").get_json()["data"][0]["maybeCount"], 0)
+AssertionError: 1 != 0
+
+======================================================================
+FAIL: test_deeply_nested_json_is_a_400_not_a_crash (tests.test_robustness.HostileInputTests.test_deeply_nested_json_is_a_400_not_a_crash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 17, in test_deeply_nested_json_is_a_400_not_a_crash
+    self.assertEqual(res.status_code, 400)
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_look_alike_unicode_emails_cannot_create_a_second_account (tests.test_robustness.HostileInputTests.test_look_alike_unicode_emails_cannot_create_a_second_account)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 55, in test_look_alike_unicode_emails_cannot_create_a_second_account
+    self.assertEqual(second.status_code, 409)
+AssertionError: 201 != 409
+
+======================================================================
+FAIL: test_names_made_only_of_invisible_characters_are_rejected (tests.test_robustness.HostileInputTests.test_names_made_only_of_invisible_characters_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 41, in test_names_made_only_of_invisible_characters_are_rejected
+    self.assertEqual(res.status_code, 422, repr(sneaky))
+AssertionError: 201 != 422 : '\u200b\u200b\u200b\u200b'
+
+======================================================================
+FAIL: test_session_dates_outside_a_sane_range_are_a_422_not_a_500 (tests.test_robustness.HostileInputTests.test_session_dates_outside_a_sane_range_are_a_422_not_a_500)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 34, in test_session_dates_outside_a_sane_range_are_a_422_not_a_500
+    self.assertEqual(res.status_code, 422, when)
+AssertionError: 500 != 422 : 9999-12-31T23:59:59-05:00
+
+======================================================================
+FAIL: test_single_line_fields_reject_control_characters (tests.test_robustness.HostileInputTests.test_single_line_fields_reject_control_characters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 48, in test_single_line_fields_reject_control_characters
+    self.assertEqual(c.post("/api/auth/register", json=body).status_code, 422, (field, value))
+AssertionError: 201 != 422 : ('name', 'Alex\nRao')
+
+======================================================================
+FAIL: test_a_refresh_token_can_only_be_spent_once_even_when_two_requests_overlap (tests.test_robustness.RaceConditionTests.test_a_refresh_token_can_only_be_spent_once_even_when_two_requests_overlap)
+Both overlapping requests read the token as unused. Only one may receive a successor token.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 124, in test_a_refresh_token_can_only_be_spent_once_even_when_two_requests_overlap
+    with self.assertRaises(Exception) as ctx:
+AssertionError: Exception not raised
+
+======================================================================
+FAIL: test_join_by_code_race_is_a_409_too (tests.test_robustness.RaceConditionTests.test_join_by_code_race_is_a_409_too)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 83, in test_join_by_code_race_is_a_409_too
+    self.assertEqual(res.status_code, 409)
+AssertionError: 500 != 409
+
+======================================================================
+FAIL: test_losing_a_join_race_is_a_409_not_a_500 (tests.test_robustness.RaceConditionTests.test_losing_a_join_race_is_a_409_not_a_500)
+Two requests pass the 'already a member?' check before either inserts. Reproduced deterministically.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 75, in test_losing_a_join_race_is_a_409_not_a_500
+    self.assertEqual(res.status_code, 409)
+AssertionError: 500 != 409
+
+======================================================================
+FAIL: test_many_simultaneous_joins_give_exactly_one_success (tests.test_robustness.RaceConditionTests.test_many_simultaneous_joins_give_exactly_one_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 97, in test_many_simultaneous_joins_give_exactly_one_success
+    self.assertEqual(sorted(results), [200] + [409] * 7, results)
+AssertionError: Lists differ: [200, 500, 500, 500, 500, 500, 500, 500] != [200, 409, 409, 409, 409, 409, 409, 409]
+
+First differing element 1:
+500
+409
+
+- [200, 500, 500, 500, 500, 500, 500, 500]
++ [200, 409, 409, 409, 409, 409, 409, 409] : [200, 500, 500, 500, 500, 500, 500, 500]
+
+======================================================================
+FAIL: test_parallel_refreshes_never_create_two_live_tokens (tests.test_robustness.RaceConditionTests.test_parallel_refreshes_never_create_two_live_tokens)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/claude/studysync/server/tests/test_robustness.py", line 144, in test_parallel_refreshes_never_create_two_live_tokens
+    self.assertEqual(codes.count(200), 1, codes)
+AssertionError: 6 != 1 : [200, 200, 200, 200, 200, 200]
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.646s
+
+FAILED (failures=12)

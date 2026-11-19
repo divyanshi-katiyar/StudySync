@@ -1,0 +1,38 @@
+Dataset: large   requests per endpoint: 150
+
+Endpoint                           ms/request   p95 ms  SQL stmts
+GET /api/health                          0.86     1.00          1
+GET /api/users/me                        1.18     1.81          1
+GET /api/users/me/dashboard              1.58     2.20          4
+GET /api/groups (discover)               1.41     1.89          3
+GET /api/groups?search=group             1.79     2.42          3
+GET /api/groups/mine                     2.00     2.72          2
+GET /api/groups/g1                       1.13     1.33          2
+GET /api/groups/g1/resources             1.26     1.62          6
+GET /api/groups/g1/posts                 1.01     1.29          5
+GET /api/posts/p1                        1.63     1.93          6
+GET /api/sessions                        1.27     1.92          2
+GET /api/notifications                   1.18     1.59          2
+
+Where the Python time goes across all requests above (cProfile, sorted by own time):
+ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     5550    0.196    0.000    0.199    0.000 {method 'execute' of 'sqlite3.Connection' objects}
+     3600    0.060    0.000    0.060    0.000 /usr/lib/python3.12/json/encoder.py:205(iterencode)
+   350700    0.053    0.000    0.069    0.000 {built-in method builtins.isinstance}
+    56550    0.036    0.000    0.087    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/local.py:310(__get__)
+     1650    0.035    0.000    0.035    0.000 {method 'fetchall' of 'sqlite3.Cursor' objects}
+    14700    0.033    0.000    0.067    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/datastructures/headers.py:375(set)
+     1800    0.031    0.000    0.121    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/test.py:667(get_environ)
+   151050    0.030    0.000    0.030    0.000 {method 'lower' of 'str' objects}
+    58350    0.026    0.000    0.037    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/local.py:515(_get_current_object)
+    50850    0.025    0.000    0.053    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/datastructures/structures.py:22(iter_multi_items)
+     1800    0.024    0.000    0.024    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+    10800    0.024    0.000    0.048    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/urls.py:37(_unquote_partial)
+    47700    0.024    0.000    0.046    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/datastructures/headers.py:595(_str_header_value)
+     7200    0.023    0.000    0.123    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/datastructures/headers.py:225(extend)
+61200/57600    0.023    0.000    0.032    0.000 {method 'encode' of 'str' objects}
+    23400    0.022    0.000    0.034    0.000 /usr/lib/python3.12/urllib/parse.py:205(_hostinfo)
+     3600    0.021    0.000    0.139    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/urls.py:61(uri_to_iri)
+     3600    0.021    0.000    0.052    0.000 /usr/local/lib/python3.12/dist-packages/werkzeug/wrappers/request.py:113(__init__)
+
+

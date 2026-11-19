@@ -1,0 +1,26 @@
+PASS useAsync > starts loading, then exposes the data
+PASS useAsync > exposes the error and no data when the request fails
+PASS useAsync > keeps showing the old data while a reload is in flight
+PASS useAsync > ignores a slow answer that arrives after a newer request was made
+PASS useAsync > refetches when a dependency changes
+PASS useAsync > setData supports optimistic updates with a value or an updater function
+PASS useDebounce > returns the first value at once and follows changes only after the delay
+PASS useDebounce > restarts the wait on every change, so typing quickly produces one update
+PASS useForm > binds values and updates them from events or plain values
+PASS useForm > check() stores and returns the errors for invalid fields only
+PASS useForm > editing a field clears its own error but leaves the others
+PASS useForm > reset() restores the starting values and removes every error
+PASS useForm > setErrors lets the page show errors that came from the server
+PASS usePageTitle > sets the document title with the product name, and the bare name when empty
+PASS useLiveUpdates > calls the handler only for events that match
+PASS useLiveUpdates > always passes a resync event, even when the filter would reject it
+PASS useLiveUpdates > stops listening when the component unmounts
+PASS useLiveUpdates > uses the latest handler without resubscribing
+PASS useLiveUpdates > collapses a burst of events into one call when a debounce is set
+PASS useLiveUpdates > drops a pending debounced call when the component unmounts
+PASS useLiveUpdates > does nothing and does not crash without a provider (mock mode)
+PASS useLiveGroupReload > reloads for the right group and kind, once per burst
+PASS useLiveGroupReload > for a single post, ignores changes to other posts but reacts to group-wide ones
+PASS useLiveGroupReload > a resync event reloads regardless of group
+
+24 passed, 0 failed

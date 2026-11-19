@@ -168,3 +168,18 @@ class RateLimitTests(ApiTestCase):
         statuses = [a.post("/api/groups/join-by-code", json={"code": f"AAA-{i:06d}"}).status_code for i in range(4)]
         self.assertEqual(statuses[:2], [404, 404])
         self.assertEqual(statuses[2:], [429, 429])
+
+
+class ErrorLogTests(ApiTestCase):
+    def test_unexpected_errors_are_logged_with_the_request_id_the_user_can_quote(self):
+        a = self.actor()
+        with mock.patch("studysync.services.groups.my_groups", side_effect=RuntimeError("disk exploded")), self.assertLogs("studysync", level="ERROR") as logs:
+            res = a.get("/api/groups/mine", headers={"X-Request-Id": "trace-abc-123"})
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.headers["X-Request-Id"], "trace-abc-123")
+        line = logs.output[0]
+        self.assertIn("GET /api/groups/mine", line)
+        self.assertIn("trace-abc-123", line)
+        self.assertIn("disk exploded", line)
+        self.assertIn("Traceback", line)  # the stack trace goes to the log, never to the client
+        self.assertNotIn("disk exploded", res.get_data(as_text=True))

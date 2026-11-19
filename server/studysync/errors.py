@@ -1,7 +1,7 @@
 """One error type and one JSON error shape: { success: false, message, errors? }."""
 import logging
 
-from flask import jsonify
+from flask import g, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 log = logging.getLogger("studysync")
@@ -48,5 +48,6 @@ def register_error_handlers(app):
     @app.errorhandler(Exception)
     def handle_unexpected(err: Exception):
         # Never leak stack traces or SQL to the client; log them for the developer instead.
-        log.exception("Unhandled error: %s", err)
+        # the request id is also sent back in the X-Request-Id response header, so a user report can be matched to this log line
+        log.exception("Unhandled error on %s %s [request %s]: %s", request.method, request.path, getattr(g, "request_id", "-"), err)
         return error_response(500, "Something went wrong on our side. Please try again.")

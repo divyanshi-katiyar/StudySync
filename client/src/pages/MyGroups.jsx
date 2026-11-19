@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Library, Plus } from 'lucide-react'
 import { groups } from '../api'
 import { useAsync } from '../hooks/useAsync'
-import { useLiveUpdates } from '../context/RealtimeContext'
+import { RELOAD_DEBOUNCE_MS, useLiveUpdates } from '../context/RealtimeContext'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Button from '../components/ui/Button'
 import PageHeader from '../components/ui/PageHeader'
@@ -15,7 +15,7 @@ import JoinByCodeModal from '../components/groups/JoinByCodeModal'
 export default function MyGroups() {
   usePageTitle('My groups')
   const { data, error, loading, reload } = useAsync(() => groups.mine(), [])
-  useLiveUpdates((e) => e.type === 'group.updated' && ['members', 'group', 'deleted'].includes(e.kind), reload)
+  useLiveUpdates((e) => e.type === 'group.updated' && ['members', 'group', 'deleted'].includes(e.kind), reload, { debounceMs: RELOAD_DEBOUNCE_MS })
   const [creating, setCreating] = useState(false)
   const [joining, setJoining] = useState(false)
 

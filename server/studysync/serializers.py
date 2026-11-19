@@ -8,7 +8,6 @@ def public_user(row) -> dict:
 
 GROUP_SQL = """
 SELECT g.*, u.name AS owner_name,
-  (SELECT COUNT(*) FROM memberships m WHERE m.group_id = g.id) AS member_count,
   (SELECT m.role FROM memberships m WHERE m.group_id = g.id AND m.user_id = :uid) AS my_role,
   (SELECT s.id FROM study_sessions s WHERE s.group_id = g.id AND s.starts_at > :now ORDER BY s.starts_at LIMIT 1) AS next_id,
   (SELECT s.title FROM study_sessions s WHERE s.group_id = g.id AND s.starts_at > :now ORDER BY s.starts_at LIMIT 1) AS next_title,

@@ -1,0 +1,12 @@
+StudySync test run 2026-11-06_11-19-13
+Python 3.12.3, Node v22.22.2
+
+PASS  Server tests (unittest)                      200 tests, OK                            15.8s
+PASS  Server line coverage (floor 95 %)            total 100.0%                             16.3s
+PASS  Client/server validation parity              85 validation cases, 0 mismatches; subjects and colours: identical    0.2s
+PASS  Client Node tests                            28 passed, 0 failed                       0.9s
+SKIP  End-to-end (real client + real server)       needs Node
+SKIP  React tests (Vitest)                         run `npm install` in client/ first
+SKIP  Mutation check (do tests notice bugs?)       slow; add --full to run it
+
+RESULT: ALL LAYERS PASSED

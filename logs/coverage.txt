@@ -1,0 +1,29 @@
+Tests run: 200, failures: 0, errors: 0
+
+File                                          Lines  Miss   Cover  Missing lines
+studysync/__init__.py                            76     0  100.0%  
+studysync/config.py                              33     0  100.0%  
+studysync/db.py                                  77     0  100.0%  
+studysync/errors.py                              39     0  100.0%  
+studysync/ratelimit.py                           40     0  100.0%  
+studysync/realtime.py                            78     0  100.0%  
+studysync/routes/auth.py                         58     0  100.0%  
+studysync/routes/content.py                      58     0  100.0%  
+studysync/routes/groups.py                       62     0  100.0%  
+studysync/routes/sessions.py                     45     0  100.0%  
+studysync/routes/stream.py                       17     0  100.0%  
+studysync/routes/users.py                        27     0  100.0%  
+studysync/security.py                           121     0  100.0%  
+studysync/seed.py                                70     0  100.0%  
+studysync/serializers.py                         27     0  100.0%  
+studysync/services/auth.py                       58     0  100.0%  
+studysync/services/common.py                     37     0  100.0%  
+studysync/services/content.py                   201     0  100.0%  
+studysync/services/groups.py                    185     0  100.0%  
+studysync/services/notifications.py              41     0  100.0%  
+studysync/services/sessions.py                   96     0  100.0%  
+studysync/subjects.py                            13     0  100.0%  
+studysync/utils.py                               30     0  100.0%  
+studysync/validation.py                          92     0  100.0%  
+--------------------------------------------------------------------------------
+TOTAL                                          1581     0  100.0%
