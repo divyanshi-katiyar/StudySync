@@ -108,7 +108,8 @@ environment used; re-run Lighthouse after `npm run build` to measure them. Optim
 
 ## 6. What was not verified here
 
-* The 23 existing Vitest tests and the production build could not be run (no network to install React tooling). The 24 new hook tests were run in headless Chromium through a small
-  Vitest/Testing-Library stand-in with React 19 (the project uses 18.3), and were mutation-checked there (5 of 5 deliberate hook bugs caught). Run `npm test` to confirm under real Vitest.
-* `.github/workflows/ci.yml` is written for GitHub Actions but was not executed.
+* While preparing the work, the 23 existing Vitest tests and the production build could not be run (no network to install React tooling). The 24 new hook tests were run in headless Chromium through a small
+  Vitest/Testing-Library stand-in with React 19 and were mutation-checked there (5 of 5 deliberate hook bugs caught).
+* **Then the first GitHub Actions run settled it:** under the real Vitest 24 of 24 hook tests passed, and 1 of the 23 Week 2 tests failed because the form's password message had been unified with the API's ("at least 8 characters" became "8 to 128 characters"); the expectation was updated and all 47 pass. The API job failed once because a test imported `requests`, which is not in `requirements.txt`; it was rewritten with the standard library. Both are examples of the lesson "run what you changed, in a clean environment".
+* The `npm run build` step and the remaining CI steps (parity, end-to-end) are confirmed by the next run on GitHub, not here.
 * Page-level React tests (rendering whole screens against the live API) are not included; the end-to-end layer covers the data flow, not the pixels.

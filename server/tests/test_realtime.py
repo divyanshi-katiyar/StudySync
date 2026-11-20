@@ -1,10 +1,10 @@
 """Live events over Server-Sent Events, tested against a real HTTP server (the in-process test client cannot stream)."""
+import http.client
 import json
 import logging
 import threading
 import time
 
-import requests
 from werkzeug.serving import make_server
 
 from studysync.realtime import QUEUE_SIZE, Hub
@@ -15,20 +15,29 @@ logging.getLogger("werkzeug").setLevel(logging.ERROR)  # keep test output readab
 
 
 class Stream:
-    """A live connection that collects events in a background thread so tests can wait for them."""
+    """A live connection that collects events in a background thread so tests can wait for them.
+    Uses only the standard library (http.client), so the tests need no packages beyond requirements.txt."""
 
     def __init__(self, base, token):
         self.events, self.ended = [], threading.Event()
-        self.response = requests.get(f"{base}/api/stream", headers={"Authorization": f"Bearer {token}"}, stream=True, timeout=10)
-        self.status = self.response.status_code
+        host, port = base.replace("http://", "").split(":")
+        self.conn = http.client.HTTPConnection(host, int(port), timeout=10)
+        self.conn.request("GET", "/api/stream", headers={"Authorization": f"Bearer {token}"})
+        self.response = self.conn.getresponse()
+        self.status = self.response.status
+        self.content_type = self.response.getheader("Content-Type")
         self._thread = threading.Thread(target=self._read, daemon=True)
         self._thread.start()
 
     def _read(self):
         event = None
         try:
-            for line in self.response.iter_lines(decode_unicode=True):
-                if line is None or line.startswith(":"):
+            while True:
+                raw = self.response.readline()
+                if not raw:  # the server closed the stream
+                    break
+                line = raw.decode("utf-8").rstrip("\r\n")
+                if not line or line.startswith(":"):
                     continue
                 if line.startswith("event:"):
                     event = line[6:].strip()
@@ -52,7 +61,11 @@ class Stream:
         return [name for name, _ in self.events]
 
     def close(self):
-        self.response.close()
+        try:
+            self.response.close()
+            self.conn.close()
+        except Exception:
+            pass
 
 
 class LiveCase(ApiTestCase):
@@ -79,13 +92,17 @@ class LiveCase(ApiTestCase):
 
 class StreamTests(LiveCase):
     def test_stream_needs_a_token(self):
-        self.assertEqual(requests.get(f"{self.base}/api/stream", timeout=5).status_code, 401)
+        host, port = self.base.replace("http://", "").split(":")
+        conn = http.client.HTTPConnection(host, int(port), timeout=5)
+        conn.request("GET", "/api/stream")
+        self.assertEqual(conn.getresponse().status, 401)
+        conn.close()
 
     def test_connection_starts_with_a_ready_event(self):
         a = self.actor()
         s = self.stream(a)
         self.assertEqual(s.wait_for("ready"), {"userId": a.id})
-        self.assertEqual(s.response.headers["Content-Type"], "text/event-stream; charset=utf-8")
+        self.assertEqual(s.content_type, "text/event-stream; charset=utf-8")
 
     def test_members_get_a_notification_and_a_refresh_hint_when_someone_shares(self):
         owner, member = self.actor("Priya Nair"), self.actor("Sam Mathew")

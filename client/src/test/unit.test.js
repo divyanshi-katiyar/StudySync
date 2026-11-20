@@ -5,7 +5,7 @@ describe('validation rules', () => {
   it('returns messages only for invalid fields', () => {
     const errors = validate({ email: [required('your email'), email], password: [password] }, { email: 'a@b.co', password: 'short' })
     expect(errors.email).toBeUndefined()
-    expect(errors.password).toMatch(/at least 8 characters/i)
+    expect(errors.password).toMatch(/8 to 128 characters/i) // the form now says exactly what the API says (Week 5 parity fix)
   })
   it('accepts only http and https links', () => {
     expect(url('https://example.com/a')).toBe('')

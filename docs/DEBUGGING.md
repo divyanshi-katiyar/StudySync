@@ -82,3 +82,4 @@ Final result: **17 of 17** (`logs/mutation-check.txt`) and 5 of 5 for the React 
 7. **Test the tests.** Deliberately breaking code showed two weak tests that coverage said were fine.
 8. **Cross-layer tests earn their keep.** The end-to-end test failed the moment the server's rules tightened; unit tests on either side alone would have stayed green.
 9. **Write down the evidence.** Saving the failing output before the fix makes the report honest and the fix verifiable.
+10. **Run what you changed, in a clean environment.** Continuous integration (a clean machine that installs only what the project declares) found two mistakes that passed locally: a test file that imported a package missing from `requirements.txt`, and an existing Week 2 test that still expected the old wording of a message changed by the parity fix. Neither was a product bug; both were caused by changes I could not run in full where I prepared them.
